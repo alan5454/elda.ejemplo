@@ -1,25 +1,51 @@
-function agregarTarea() {
+// 1. Apenas se carga la página, pedimos las tareas al servidor de Render y las mostramos
+document.addEventListener('DOMContentLoaded', cargarTareas);
 
-    let input = document.getElementById("tareaInput");
+async function cargarTareas() {
+    try {
+        const respuesta = await fetch('/api/tareas');
+        const tareas = await respuesta.json();
+        
+        const lista = document.getElementById('listaTareas');
+        lista.innerHTML = ''; // Limpiamos la lista por si acaso
 
-    let tarea = input.value;
+        tareas.forEach(tarea => {
+            const li = document.createElement('li');
+            li.textContent = tarea.nombre;
+            lista.appendChild(li);
+        });
+    } catch (error) {
+        console.error('Error al cargar las tareas:', error);
+    }
+}
 
-    if (tarea === "") {
-        alert("Escribe una tarea");
+// 2. Función que se ejecuta cuando le das clic al botón "Agregar"
+async function agregarTarea() {
+    const input = document.getElementById('tareaInput');
+    const nombreTarea = input.value.trim();
+
+    if (!nombreTarea) {
+        alert('Por favor escribe una tarea');
         return;
     }
 
-    let lista = document.getElementById("listaTareas");
+    try {
+        const respuesta = await fetch('/api/tareas', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ nombre: nombreTarea })
+        });
 
-    let elemento = document.createElement("li");
-
-    elemento.textContent = tarea;
-
-    elemento.onclick = function() {
-        elemento.remove();
-    };
-
-    lista.appendChild(elemento);
-
-    input.value = "";
+        if (respuesta.ok) {
+            input.value = ''; // Limpiamos la caja de texto
+            cargarTareas();   // Recargamos la lista para que aparezca la nueva tarea
+        } else {
+            alert('Hubo un error al guardar la tarea');
+        }
+    } catch (error) {
+        console.error('Error de conexión:', error);
+        alert('No se pudo conectar con el servidor');
+    }
 }
