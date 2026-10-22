@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Mi lista de tareas</title>
+
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+    <header>
+        <h1>Mi lista de tareas</h1>
+
+        <nav>
+            <a href="index.html">Inicio</a>
+            <a href="pages/acerca.html">Acerca de</a>
+            <a href="pages/contacto.html">Contacto</a>
+        </nav>
+    </header>
+
+    <main>
+
+        <h2>Mis tareas</h2>
+
+        <div class="agregar">
+            <input type="text" id="tareaInput" placeholder="Escribe una tarea">
+
+            <button onclick="agregarTarea()">
+                Agregar
+            </button>
+        </div>
+
+        <ul id="listaTareas"></ul>
+
+    </main>
+
+    <footer>
+        <p>Mi primera aplicación web</p>
+    </footer>
+
+    <script src="js/app.js"></script>
+
+</body>
+
+</html>
