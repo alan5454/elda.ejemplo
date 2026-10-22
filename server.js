@@ -4,14 +4,24 @@ const path = require('path');
 const app = express();
 
 app.use(express.json());
-
-// Hacer que la carpeta 'public' sea de acceso público
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Configuración de PostgreSQL con Render
+// Configuración de PostgreSQL con Render utilizando la variable de entorno
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
+});
+
+// Crea la tabla 'tareas' automáticamente si no existe para evitar errores
+pool.query(`
+  CREATE TABLE IF NOT EXISTS tareas (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL
+  )
+`).then(() => {
+  console.log("Tabla 'tareas' verificada o creada exitosamente.");
+}).catch(err => {
+  console.error("Error al crear la tabla automáticamente:", err);
 });
 
 // Ruta de prueba para el estado de la base de datos
@@ -25,16 +35,17 @@ app.get('/api/estado', async (req, res) => {
   }
 });
 
-// Rutas para manejar las tareas (ejemplo para guardar y consultar)
+// Ruta GET para consultar las tareas almacenadas
 app.get('/api/tareas', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM tareas'); // O la tabla que utilices
+    const result = await pool.query('SELECT * FROM tareas');
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: 'Error al consultar las tareas', detalle: err.message });
   }
 });
 
+// Ruta POST para guardar una nueva tarea
 app.post('/api/tareas', async (req, res) => {
   const { nombre } = req.body;
   try {
@@ -46,6 +57,7 @@ app.post('/api/tareas', async (req, res) => {
   }
 });
 
+// Puerto del servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor de elda corriendo en el puerto ${PORT}`);
