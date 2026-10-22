@@ -1,31 +1,59 @@
-
-const express = require("express");
-const path = require("path");
-const { Pool } = require("pg");
-
+const express = require('express');
+const { Pool } = require('pg');
 const app = express();
-const PORT = process.env.PORT || 3000;
 
+// Middleware para entender JSON en las peticiones
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
 
+// Configuración de la conexión a PostgreSQL con la variable de entorno de Render
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL
-    ? { rejectUnauthorized: false }
-    : false
-});
-
-app.get("/api/estado", async (req, res) => {
-  try {
-    await pool.query("SELECT 1");
-    res.json({ conectado: true });
-  } catch (error) {
-    console.error("Error de base de datos:", error.message);
-    res.status(500).json({ conectado: false });
+  ssl: {
+    rejectUnauthorized: false // Necesario para conexiones seguras externas como Render
   }
 });
 
+// 1. Ruta para verificar el estado de la conexión
+app.get('/api/estado', async (req, res) => {
+  try {
+    const client = await pool.connect();
+    res.json({ estado: 'Conexión activa y funcionando correctamente con PostgreSQL' });
+    client.release();
+  } catch (err) {
+    res.status(500).json({ error: 'Error al conectar a la base de datos', detalle: err.message });
+  }
+});
+
+// 2. Ruta POST para GUARDAR un registro (basado en la estructura de tu tabla)
+app.post('/api/usuarios', async (req, res) => {
+  const { name, email, id } = req.body;
+  
+  try {
+    const query = 'INSERT INTO usuarios (name, email, id) VALUES ($1, $2, $3) RETURNING *';
+    const values = [name, email, id];
+    
+    const result = await pool.query(query, values);
+    res.status(201).json({
+      mensaje: '¡Dato guardado con éxito!',
+      registro: result.rows[0]
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Error al guardar en la base de datos', detalle: err.message });
+  }
+});
+
+// 3. Ruta GET para CONSULTAR todos los registros guardados
+app.get('/api/usuarios', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM usuarios');
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al consultar los datos', detalle: err.message });
+  }
+});
+
+// Puerto del servidor
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Servidor iniciado en el puerto ${PORT}`);
+  console.log(`Servidor de elda corriendo en el puerto ${PORT}`);
 });
